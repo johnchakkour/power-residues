@@ -1,65 +1,104 @@
-"""
-This is a Python implementation of calculations from the paper
-
-    Thaine, F (1996) "Properties that characterize Gaussian periods
-    and cyclotomic numbers" Proc. Amer. Math. Soc. 124 (1): 35–45.
-
-Let q = ef + 1 be prime, ζ_q a primitive q-th root of unity, and
-η_0, ..., η_{e–1} the periods of degree e of Q(ζ_q). The periods
-are conjugate and have the same minimal polynomial, which we can
-obtain as the characteristic polynomial of the matrix A=[a{i,j}]
-where η_0 * η_i = Σ^{e–1}_{j=0} (a{i,j} * η_j). This irreducible
-polynomial of degree e is equal to x^e – tr(η_0) + ··· + N(η_0),
-where tr and N are respectively the field trace and norm of η_0.
-Moreover, note that tr(η_0) = tr(A) = Σ_i η_i = –1, and N(η_0) =
-det(A) = (–1)^e * Π_i η_i, so the characteristic polynomial of A
-is equal to x^e + x^{e–1} + ··· + (–1)^e * Π_i η_i.
-"""
-
 from sympy import *
-import cmath
 
 
-def subgroup(q, prim, e, f):
+def subgroup(q: int, prim: int, e: int) -> list[list[int]]:
+    """Returns the subgroup of e-th power residues mod q and its cosets"""
+    f = (q - 1) // e
     # prim is a primitive root mod q
     # c0 is the subgroup of e-th power residues mod q, of order f
-    c0 = [pow(prim, e*k, q) for k in range(f)]
+    c0 = [pow(prim, e * k, q) for k in range(f)]
     # c1, c2, ..., c_{e-1} are its cosets
     cosets = [[(pow(prim, k, q) * i) % q for i in c0] for k in range(e)]
     return cosets
 
 
-def periods(sym, sub):
-    # Returns the Gaussian period of the subgroup sub, symbolically
-    return sum(sym**i for i in sub)
+def periods(sym, sub: list[int]):
+    """Returns the Gaussian period of the subgroup sub, symbolically"""
+    return sum(sym ** i for i in sub)
 
 
-def period_value(sub, q):
-    # Returns the Gaussian period of the subgroup sub, algebraically
-    z = cmath.exp(2j * cmath.pi / q)
-    return sum(z**h for h in sub)
-
-
-def reduce_powers(expr, z, n):
-    # Reduces the exponents in the Gaussian period mod n
+def reduce_powers(expr, z, n: int):
+    """Reduces the exponents in the Gaussian period mod n"""
     expr = expr.replace(
         lambda x: x.is_Pow and x.base == z,
-        lambda x: z**(x.exp % n)
-    )
+        lambda x: z ** (x.exp % n))
     expr = expand(expr)
     # Use 1 + ζ + ζ^2 + ... + ζ^(n-1) = 0 to eliminate constant term
     const = expr.as_coefficients_dict().get(1, 0)
     if const:
-        expr = expand(expr - const * (1 + sum(z**k for k in range(1, n))))
+        expr = expand(expr - const * (1 + sum(z ** k for k in range(1, n))))
     return expr
 
 
 def linear(basis_expr, expr, sym):
-    # Pick one exponent from each period and read off its coefficient
+    """Pick one exponent from each period and read off its coefficient"""
+
     def first_exp(e):
         for term in Add.make_args(e):
             if term.is_Pow:
                 return term.exp
             if term == sym:
                 return 1
+
     return [expr.coeff(sym, first_exp(b)) for b in basis_expr]
+
+
+def constant_term(q: int, e: int) -> int:
+    """Returns the constant term of minimal polynomial of η_0 for q = ef + 1"""
+    g = primitive_root(q)
+    cosets = subgroup(q, g, e)
+    z = symbols('ζ')
+    periods_list = [periods(z, ck) for ck in cosets]
+    rows = []
+    for i in range(e):
+        prd = reduce_powers(
+            expand(periods_list[0] * periods_list[i]), z, q)
+        rows.append(linear(periods_list, prd, z))
+    mat = Matrix(rows)
+    lam = symbols('λ')
+    # Constant term is the value of the characteristic polynomial at λ = 0
+    return int(mat.charpoly(lam).as_expr().subs(lam, 0))
+
+
+def is_eth_power(n: int, q: int, e: int) -> bool:
+    """Return True if n is an e-th power residue mod q"""
+    return pow(n, (q - 1) // e, q) == 1
+
+
+def scan(e: int, bound: int, prnt=False) -> list[int]:
+    """Scan all primes q = ef + 1 up to bound and print a comparison table."""
+    if prnt:
+        print(f"e = {e}, scanning primes q = e*f + 1 up to {bound}")
+        print()
+        print(f"{'q':>6}  {'f':>6}  {'const term':>12}  {'even?':>6}  "
+              f"{'2 e-th power?':>14}  {'agree?':>7}")
+        print("-" * 62)
+
+    q = 2
+    total = 0  # number of primes q such that q – 1 = 0 (mod e)
+    res_lst = []  # list of primes q for which 2 is an e-th power mod q
+    while q <= bound:
+        if (q - 1) % e == 0:
+            total += 1
+            ct = constant_term(q, e)
+            even = ct % 2 == 0
+            if even:
+                res_lst.append(q)
+            eth_power = is_eth_power(2, q, e)
+            agree = "✓" if even == eth_power else "✗ MISMATCH"
+            f = (q - 1) // e
+            if prnt:
+                print(f"{q:>6}  {f:>6}  {ct:>12}  "
+                      f"{str(even) if even else ' –':>6} {str(eth_power):>14}"
+                      f"  {agree:>7}")
+        q = nextprime(q)
+    if prnt:
+        print()
+        print("The primes q for which 2 is an e-th power mod q are: ")
+        for p in res_lst:
+            print("    ", end="")
+            print(p)
+        print()
+        print(f"The proportion of primes q <= {bound} satisfying this "
+              f"condition is {len(res_lst)/total}.")
+    return res_lst
