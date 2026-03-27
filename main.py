@@ -17,15 +17,14 @@ if __name__ == '__main__':
             e = int(input(f"{e} is not a prime factor of q – 1. Try again: "))
         print()
 
-        f = (q-1) // e
-        print(f"We have q = ef + 1 = {e}·{f} + 1")
+        print(f"We have q = ef + 1 = {e}·{(q-1) // e} + 1")
         print()
 
         g = primitive_root(q)
         print(f"g = {g} is a primitive root mod {q}")
         print()
 
-        cosets = subgroup(q, g, e, f)
+        cosets = subgroup(q, g, e)
         print(f"In (Z/{q}Z)* we have the subgroup C_0 of e-th power residues"
               f" mod q, and its cosets C_k = g^k·C_0:")
         for k, ck in enumerate(cosets):
