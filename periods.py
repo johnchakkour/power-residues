@@ -1,4 +1,5 @@
 from sympy import *
+from typing import *
 
 
 def subgroup(q: int, prim: int, e: int) -> list[list[int]]:
@@ -14,6 +15,8 @@ def subgroup(q: int, prim: int, e: int) -> list[list[int]]:
 
 def periods(sym, sub: list[int]):
     """Returns the Gaussian period of the subgroup sub, symbolically"""
+    # Example: if sym = Symbol('ζ') and sub = [2, 4, 6], then
+    # periods(sym, sub) returns ζ**6 + ζ**4 + ζ**2
     return sum(sym ** i for i in sub)
 
 
@@ -32,19 +35,19 @@ def reduce_powers(expr, z, n: int):
 
 def linear(basis_expr, expr, sym):
     """Pick one exponent from each period and read off its coefficient"""
-
     def first_exp(e):
         for term in Add.make_args(e):
             if term.is_Pow:
                 return term.exp
             if term == sym:
                 return 1
-
     return [expr.coeff(sym, first_exp(b)) for b in basis_expr]
 
 
 def constant_term(q: int, e: int) -> int:
-    """Returns the constant term of minimal polynomial of η_0 for q = ef + 1"""
+    """Returns the constant term of the minimal polynomial of the Gaussian
+     period for q = ef + 1
+    """
     g = primitive_root(q)
     cosets = subgroup(q, g, e)
     z = symbols('ζ')
@@ -73,7 +76,6 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
         print(f"{'q':>6}  {'f':>6}  {'const term':>12}  {'even?':>6}  "
               f"{'2 e-th power?':>14}  {'agree?':>7}")
         print("-" * 62)
-
     q = 2
     total = 0  # number of primes q such that q – 1 = 0 (mod e)
     res_lst = []  # list of primes q for which 2 is an e-th power mod q
@@ -102,3 +104,54 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
         print(f"The proportion of primes q <= {bound} satisfying this "
               f"condition is {len(res_lst)/total}.")
     return res_lst
+
+
+def is_nth_residue_2(q: int, n: int) -> bool:
+    """Checks if 2 is an n-th power residue mod q."""
+    return pow(2, (q - 1) // n, q) == 1
+
+
+def represent(q: int, eq: Callable[..., int]) -> tuple[int | None, ...] | None:
+    """Returns the first tuple of non-negative integers satisfying
+    eq(*args) == q, or None if none is found. Assumes eq is non-decreasing
+    in each argument.
+    """
+    a = 0
+    while eq(a, 0) <= q:
+        b = 0
+        while eq(a, b) <= q:
+            if eq(a, b) == q:
+                return a, b
+            b += 1
+        a += 1
+    return None
+
+
+def verify(n: int, eq: Callable[..., int], target: int,
+           eq_label: str = "q = f(a,b)") -> None:
+    """Verify that 2 is an n-th power residue mod q iff eq(a, b) == q has
+    a solution, for the first `target` primes q ≡ 1 (mod n).
+    """
+    header = f"2^((q-1)/{n})≡1"
+    print(f"Checking: {eq_label}")
+    print(f"{'q':>10}  {header:>15}  {'a':>6}  {'b':>6}")
+    print("-" * 46)
+    q, count = 2, 0
+    failures = []
+    while count < target:
+        q = nextprime(q)
+        if q % n != 1:
+            continue
+        count += 1
+        res = is_nth_residue_2(q, n)
+        sol = represent(q, eq) if res else None
+        a_str = str(sol[0]) if sol else "-"
+        b_str = str(sol[1]) if sol else "-"
+        print(f"{q:>10}  {str(res):>15}  {a_str:>6}  {b_str:>6}")
+        if res != (sol is not None):
+            failures.append(q)
+    print("-" * 46)
+    if failures:
+        print(f"EQUIVALENCE FAILED for: {failures}")
+    else:
+        print(f"Equivalence verified for all {target} primes q ≡ 1 (mod {n}).")
