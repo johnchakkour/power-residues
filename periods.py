@@ -106,11 +106,6 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
     return res_lst
 
 
-def is_nth_residue_2(q: int, n: int) -> bool:
-    """Checks if 2 is an n-th power residue mod q."""
-    return pow(2, (q - 1) // n, q) == 1
-
-
 def represent(q: int, eq: Callable[..., int]) -> tuple[int | None, ...] | None:
     """Returns the first tuple of non-negative integers satisfying
     eq(*args) == q, or None if none is found. Assumes eq is non-decreasing
