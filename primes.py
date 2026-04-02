@@ -1,20 +1,20 @@
 from periods import *
 
 if __name__ == '__main__':
-    verify(3, lambda a, b: a**2 + 27*b**2, 1000,
-           eq_label="q = a² + 27b²")
+    # verify(3, lambda a, b: a**2 + 27*b**2, 1000, eq_label="q = a² + 27b²")
+    # idea: find Diophantine equation that minimizes error proportion
     """
     bound = int(input("Scan primes q up to: "))
     print(f"{'e':>5} "
-          f"{'primes q = 1 mod e such that 2 is an e-th power mod q':>90}")
-    print("-" * 68)
+          f"{'primes q = 1 mod e such that 2 is an e-th power mod q':>150}")
+    print("-" * 90)
     for e in primerange(3, 100):
         print(f"{e:>5} {str(scan(e, bound)):>90}")
+    """
     try:
         e = int(input("Enter a prime e: "))
         bound = int(input("Scan primes q up to: "))
         print()
-        scan(e, bound)
+        scan(e, bound, prnt=True)
     except ValueError:
         print("Please enter valid integers.")
-    """
