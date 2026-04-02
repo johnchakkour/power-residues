@@ -138,11 +138,12 @@ def verify(n: int, eq: Callable[..., int], target: int,
         if q % n != 1:
             continue
         count += 1
-        res = is_nth_residue_2(q, n)
+        res = is_eth_power(2, q, n)
+        res_str = "True" if res else "-"
         sol = represent(q, eq) if res else None
         a_str = str(sol[0]) if sol else "-"
         b_str = str(sol[1]) if sol else "-"
-        print(f"{q:>10}  {str(res):>15}  {a_str:>6}  {b_str:>6}")
+        print(f"{q:>10}  {res_str:>15}  {a_str:>6}  {b_str:>6}")
         if res != (sol is not None):
             failures.append(q)
     print("-" * 46)
