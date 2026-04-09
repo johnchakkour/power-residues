@@ -71,7 +71,7 @@ def is_eth_power(n: int, q: int, e: int) -> bool:
 def scan(e: int, bound: int, prnt=False) -> list[int]:
     """Scan all primes q = ef + 1 up to bound and print a comparison table."""
     if prnt:
-        print(f"e = {e}, scanning primes q = e*f + 1 up to {bound}")
+        print(f"e = {e}, scanning primes q = e·f + 1 up to {bound}")
         print()
         print(f"{'q':>6}  {'f':>6}  {'const term':>12}  {'even?':>6}  "
               f"{'2 e-th power?':>14}  {'agree?':>7}")
@@ -91,18 +91,26 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
             f = (q - 1) // e
             if prnt:
                 print(f"{q:>6}  {f:>6}  {ct:>12}  "
-                      f"{str(even) if even else ' –':>6} {str(eth_power):>14}"
+                      f"{'Yes' if even else ' –':>6} {str(eth_power):>14}"
                       f"  {agree:>7}")
         q = nextprime(q)
     if prnt:
         print()
-        print("The primes q for which 2 is an e-th power mod q are: ")
+        if e == 2:
+            print(f"The primes q <= {bound} for which 2 is a quadratic "
+                  f"residue mod q are: ")
+        elif e == 3:
+            print(f"The primes q <= {bound} for which 2 is a cubic residue "
+                  f"mod q are: ")
+        else:
+            print(f"The primes q <= {bound} for which 2 is a {e}-th power "
+                  f"residue mod q are: ")
         for p in res_lst:
             print("    ", end="")
             print(p)
         print()
         print(f"The proportion of primes q <= {bound} satisfying this "
-              f"condition is {len(res_lst)/total}.")
+              f"condition is {round(len(res_lst)/total, 3)}.")
     return res_lst
 
 
