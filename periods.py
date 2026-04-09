@@ -71,7 +71,18 @@ def _is_eth_power(n: int, q: int, e: int) -> bool:
 def scan(e: int, bound: int, prnt=False) -> list[int]:
     """Scan all primes q = ef + 1 up to bound and print a comparison table."""
     if prnt:
-        print(f"e = {e}, scanning primes q = e·f + 1 up to {bound}")
+        print(f"We have e = {e}. For which primes q is 2 an e-th power "
+              f"residue mod q?")
+        print("Note that necessarily such primes must satisfy q ≡ 1 (mod e).")
+        print()
+        print("We suspect that an equivalent condition to 2 being an e-th "
+              "power residue")
+        print("mod q is that the constant term of the minimal polynomial of "
+              "the Gaussian")
+        print("period η0 associated to the subgroup of eth power residues "
+              "in (Z/qZ)* is even.")
+        print()
+        print(f"Scanning primes q = e·f + 1 up to {bound}:")
         print()
         print(f"{'q':>6}  {'f':>6}  {'const term':>12}  {'even?':>6}  "
               f"{'2 e-th power?':>14}  {'agree?':>7}")
@@ -102,6 +113,9 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
         elif e == 3:
             print(f"The primes q <= {bound} for which 2 is a cubic residue "
                   f"mod q are: ")
+        elif e == 5:
+            print(f"The primes q <= {bound} for which 2 is a quintic residue "
+                  f"mod q are: ")
         else:
             print(f"The primes q <= {bound} for which 2 is a {e}-th power "
                   f"residue mod q are: ")
@@ -109,8 +123,10 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
             print("    ", end="")
             print(p)
         print()
-        print(f"The proportion of primes q <= {bound} satisfying this "
-              f"condition is {round(len(res_lst)/total, 3)}.")
+        print(f"The proportion of primes q ≡ 1 (mod e) <= {bound} satisfying "
+              f"this condition is {round(len(res_lst)/total, 3)}.")
+        print(f"The expected proportion of primes satisfying this condition "
+              f"is 1/e = 1/{e} = {round(1/e, 3)}.")
     return res_lst
 
 
