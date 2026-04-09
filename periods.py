@@ -2,7 +2,7 @@ from sympy import *
 from typing import *
 
 
-def subgroup(q: int, prim: int, e: int) -> list[list[int]]:
+def _subgroup(q: int, prim: int, e: int) -> list[list[int]]:
     """Returns the subgroup of e-th power residues mod q and its cosets"""
     f = (q - 1) // e
     # prim is a primitive root mod q
@@ -13,14 +13,14 @@ def subgroup(q: int, prim: int, e: int) -> list[list[int]]:
     return cosets
 
 
-def periods(sym, sub: list[int]):
+def _periods(sym, sub: list[int]):
     """Returns the Gaussian period of the subgroup sub, symbolically"""
     # Example: if sym = Symbol('ζ') and sub = [2, 4, 6], then
-    # periods(sym, sub) returns ζ**6 + ζ**4 + ζ**2
+    # _periods(sym, sub) returns ζ**6 + ζ**4 + ζ**2
     return sum(sym ** i for i in sub)
 
 
-def reduce_powers(expr, z, n: int):
+def _reduce_powers(expr, z, n: int):
     """Reduces the exponents in the Gaussian period mod n"""
     expr = expr.replace(
         lambda x: x.is_Pow and x.base == z,
@@ -33,7 +33,7 @@ def reduce_powers(expr, z, n: int):
     return expr
 
 
-def linear(basis_expr, expr, sym):
+def _linear(basis_expr, expr, sym):
     """Pick one exponent from each period and read off its coefficient"""
     def first_exp(e):
         for term in Add.make_args(e):
@@ -44,26 +44,26 @@ def linear(basis_expr, expr, sym):
     return [expr.coeff(sym, first_exp(b)) for b in basis_expr]
 
 
-def constant_term(q: int, e: int) -> int:
+def _constant_term(q: int, e: int) -> int:
     """Returns the constant term of the minimal polynomial of the Gaussian
      period for q = ef + 1
     """
     g = primitive_root(q)
-    cosets = subgroup(q, g, e)
+    cosets = _subgroup(q, g, e)
     z = symbols('ζ')
-    periods_list = [periods(z, ck) for ck in cosets]
+    periods_list = [_periods(z, ck) for ck in cosets]
     rows = []
     for i in range(e):
-        prd = reduce_powers(
+        prd = _reduce_powers(
             expand(periods_list[0] * periods_list[i]), z, q)
-        rows.append(linear(periods_list, prd, z))
+        rows.append(_linear(periods_list, prd, z))
     mat = Matrix(rows)
     lam = symbols('λ')
     # Constant term is the value of the characteristic polynomial at λ = 0
     return int(mat.charpoly(lam).as_expr().subs(lam, 0))
 
 
-def is_eth_power(n: int, q: int, e: int) -> bool:
+def _is_eth_power(n: int, q: int, e: int) -> bool:
     """Return True if n is an e-th power residue mod q"""
     return pow(n, (q - 1) // e, q) == 1
 
@@ -82,11 +82,11 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
     while q <= bound:
         if (q - 1) % e == 0:
             total += 1
-            ct = constant_term(q, e)
+            ct = _constant_term(q, e)
             even = ct % 2 == 0
             if even:
                 res_lst.append(q)
-            eth_power = is_eth_power(2, q, e)
+            eth_power = _is_eth_power(2, q, e)
             agree = "✓" if even == eth_power else "✗ MISMATCH"
             f = (q - 1) // e
             if prnt:
@@ -146,7 +146,7 @@ def verify(n: int, eq: Callable[..., int], target: int,
         if q % n != 1:
             continue
         count += 1
-        res = is_eth_power(2, q, n)
+        res = _is_eth_power(2, q, n)
         res_str = "True" if res else "-"
         sol = represent(q, eq) if res else None
         a_str = str(sol[0]) if sol else "-"
