@@ -13,27 +13,29 @@ def _subgroup(q: int, prim: int, e: int) -> list[list[int]]:
     return cosets
 
 
-def _periods(sym, sub: list[int]):
+def _periods(sym, sub: list[int]) -> Expr:
     """Returns the Gaussian period of the subgroup sub, symbolically"""
     # Example: if sym = Symbol('ζ') and sub = [2, 4, 6], then
     # _periods(sym, sub) returns ζ**6 + ζ**4 + ζ**2
-    return sum(sym ** i for i in sub)
+    return Add(*[sym ** i for i in sub])
 
 
-def _reduce_powers(expr, z, n: int):
+def _reduce_powers(expr: Expr, z, n: int) -> Expr:
     """Reduces the exponents in the Gaussian period mod n"""
-    expr = expr.replace(
-        lambda x: x.is_Pow and x.base == z,
-        lambda x: z ** (x.exp % n))
-    expr = expand(expr)
-    # Use 1 + ζ + ζ^2 + ... + ζ^(n-1) = 0 to eliminate constant term
-    const = expr.as_coefficients_dict().get(1, 0)
+    d = expr.as_coefficients_dict()
+    red: dict[int, int] = {}
+    for term, coef in d.items():
+        expr = 0 if term == 1 else (term.exp if term.is_Pow else 1)
+        red[expr % n] = red.get(expr % n, 0) + int(coef)
+    # Eliminate constant via 1 + ζ + ... + ζ^(n-1) = 0
+    const = red.pop(0, 0)
     if const:
-        expr = expand(expr - const * (1 + sum(z ** k for k in range(1, n))))
-    return expr
+        for k in range(1, n):
+            red[k] = red.get(k, 0) - const
+    return Add(*[c * z**e for e, c in red.items() if c])
 
 
-def _linear(basis_expr, expr, sym):
+def _linear(basis_expr, expr, sym) -> list[int]:
     """Pick one exponent from each period and read off its coefficient"""
     def first_exp(e):
         for term in Add.make_args(e):
@@ -58,9 +60,10 @@ def _constant_term(q: int, e: int) -> int:
             expand(periods_list[0] * periods_list[i]), z, q)
         rows.append(_linear(periods_list, prd, z))
     mat = Matrix(rows)
-    lam = symbols('λ')
+    # lam = symbols('λ')
     # Constant term is the value of the characteristic polynomial at λ = 0
-    return int(mat.charpoly(lam).as_expr().subs(lam, 0))
+    # return int(mat.charpoly(lam).as_expr().subs(lam, 0))
+    return int(((-1) ** e) * mat.det())
 
 
 def _is_eth_power(n: int, q: int, e: int) -> bool:
@@ -68,12 +71,29 @@ def _is_eth_power(n: int, q: int, e: int) -> bool:
     return pow(n, (q - 1) // e, q) == 1
 
 
+def _prompt_prime(prompt: str, reprompt: str) -> int:
+    """Prompt the user until they enter a prime"""
+    n = int(input(prompt))
+    while not isprime(n):
+        n = int(input(reprompt.format(n=n)))
+    return n
+
+
+def _prompt_choice(prompt: str, reprompt: str, choices: list) -> int:
+    """Prompt the user until they enter a value from choices"""
+    v = int(input(prompt))
+    while v not in choices:
+        v = int(input(reprompt.format(v=v)))
+    return v
+
+
 def scan(e: int, bound: int, prnt=False) -> list[int]:
     """Scan all primes q = ef + 1 up to bound and print a comparison table."""
     if prnt:
         print(f"We have e = {e}. For which primes q is 2 an e-th power "
               f"residue mod q?")
-        print("Note that necessarily such primes must satisfy q ≡ 1 (mod e).")
+        print(f"Note that necessarily such primes must satisfy "
+              f"q ≡ 1 (mod {e}).")
         print()
         print("We suspect that an equivalent condition to 2 being an e-th "
               "power residue")
@@ -82,7 +102,7 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
         print("period η0 associated to the subgroup of eth power residues "
               "in (Z/qZ)* is even.")
         print()
-        print(f"Scanning primes q = e·f + 1 up to {bound}:")
+        print(f"Scanning primes q = {e}·f + 1 up to {bound}:")
         print()
         print(f"{'q':>6}  {'f':>6}  {'const term':>12}  {'even?':>6}  "
               f"{'2 e-th power?':>14}  {'agree?':>7}")
@@ -123,8 +143,10 @@ def scan(e: int, bound: int, prnt=False) -> list[int]:
             print("    ", end="")
             print(p)
         print()
-        print(f"The proportion of primes q ≡ 1 (mod e) <= {bound} satisfying "
-              f"this condition is {round(len(res_lst)/total, 3)}.")
+        if total:
+            print(f"The proportion of primes q ≡ 1 (mod {e}) <= {bound} "
+                  f"satisfying this condition is "
+                  f"{round(len(res_lst)/total, 3)}.")
         print(f"The expected proportion of primes satisfying this condition "
               f"is 1/e = 1/{e} = {round(1/e, 3)}.")
     return res_lst
@@ -164,7 +186,7 @@ def verify(n: int, eq: Callable[..., int], target: int,
         count += 1
         res = _is_eth_power(2, q, n)
         res_str = "True" if res else "-"
-        sol = represent(q, eq) if res else None
+        sol = represent(q, eq)
         a_str = str(sol[0]) if sol else "-"
         b_str = str(sol[1]) if sol else "-"
         print(f"{q:>10}  {res_str:>15}  {a_str:>6}  {b_str:>6}")
@@ -175,3 +197,89 @@ def verify(n: int, eq: Callable[..., int], target: int,
         print(f"EQUIVALENCE FAILED for: {failures}")
     else:
         print(f"Equivalence verified for all {target} primes q ≡ 1 (mod {n}).")
+
+
+def gaussian_periods(q: int | None = None, e: int | None = None) -> None:
+    """
+    For a prime q = ef + 1, display the subgroup C of e-th power residues in
+    (Z/qZ)*, the Gaussian periods associated to C and its e – 1 cosets, their
+    pairwise products expressed as linear combinations of the periods, and
+    their resulting minimal polynomial over Q.
+
+    Parameters
+    ----------
+    q : prime of the form ef + 1; prompted interactively if None.
+    e : prime factor of q – 1 determining the subgroup index; prompted if None.
+    """
+    try:
+        if q is None:
+            q = _prompt_prime(
+                "Enter a prime number q: ",
+                "q = {n} is not prime. Try again: ")
+        elif not isprime(q):
+            raise ValueError(f"{q} is not prime.")
+
+        print(f"q = {q} is prime\n")
+
+        factors = list(factorint(q - 1).keys())
+        print("Here are the prime factors of q – 1:")
+        print("    " + ", ".join(str(p) for p in factors) + "\n")
+
+        if e is None:
+            e = _prompt_choice(
+                "Choose a prime e from this list: ",
+                "{v} is not a prime factor of q – 1. Try again: ",
+                factors)
+        elif e not in factors:
+            raise ValueError(f"{e} is not a prime factor of q – 1 = {q - 1}.")
+
+        f = (q - 1) // e
+        print(f"We have q = ef + 1 = {e}·{f} + 1\n")
+
+        g = primitive_root(q)
+        print(f"g = {g} is a primitive root mod {q}\n")
+
+        cosets = _subgroup(q, g, e)
+        print(f"In (Z/{q}Z)* we have the subgroup C_0 of e-th power residues "
+              f"mod q, and its cosets C_k = g^k·C_0:")
+        for k, ck in enumerate(cosets):
+            print(f"    C_{k} = {ck}")
+        print()
+
+        zta = Symbol('ζ')
+        periods_list = [_periods(zta, ck) for ck in cosets]
+        print("From these we get the following Gaussian periods:")
+        for k, pk in enumerate(periods_list):
+            print(f"    η{k} = {pk}")
+        print()
+
+        print("Products of η0 with each period:")
+        rows = []
+        for i in range(e):
+            prd = _reduce_powers(
+                expand(periods_list[0] * periods_list[i]), zta, q)
+            coeffs = _linear(periods_list, prd, zta)
+            rows.append(coeffs)
+            lhs = "η0²" if i == 0 else f"η0·η{i}"
+            combo = " + ".join(f"({c})·η{j}" for j, c in enumerate(coeffs))
+            print(f"    {lhs} = {combo}")
+        print()
+
+        lam = symbols('λ')
+        a = Matrix(rows)
+        print("The matrix of linear coefficients is\n")
+        pprint(a)
+        print()
+
+        char_poly = a.charpoly(lam).as_expr()
+        print("with characteristic polynomial\n")
+        pprint(factor(char_poly))
+        print()
+
+        period_str = ", ".join(
+            f"η{k}" for k in range(e)) if e <= 3 else f"η0, ..., η{e - 1}"
+        print(f"{period_str} generate the unique subfield of degree {e} "
+              f"over Q in Q(ζ_{q}).")
+
+    except ValueError as exc:
+        print(f"Error: {exc}")
