@@ -1,3 +1,12 @@
+"""
+References
+==========
+
+.. [1] F. Thaine (1996) "Properties that characterize Gaussian periods 
+        and cyclotomic numbers", Proc. Amer. Math. Soc. 124 (1): 35–45.
+
+"""
+
 from sympy import *
 from typing import *
 
