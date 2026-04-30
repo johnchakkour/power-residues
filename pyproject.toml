@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools >= 61"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "power_residues"
+version = "0.1.0"
+description = "Gaussian periods and power residue criteria via cyclotomic fields"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+dependencies = ["sympy"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
