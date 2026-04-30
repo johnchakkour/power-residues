@@ -81,7 +81,37 @@ parity of the constant term of $\mu(x)$ against the direct power residue test.
 from power_residues import scan
 
 # Find all primes q ≤ 200 for which 2 is a cubic residue
-result = scan(e=3, bound=200, prnt=True)
+scan(3, 200, prnt=True)
+```
+```
+We have e = 3. For which primes q is 2 an e-th power residue mod q?
+...
+Scanning primes q = 3·f + 1 up to 200:
+
+     q       f    const term   even?   2 e-th power?   agree?
+--------------------------------------------------------------
+     7       2            -1       –          False        ✓
+    13       4             1       –          False        ✓
+    19       6            -7       –          False        ✓
+    31      10            -8     Yes           True        ✓
+    37      12            11       –          False        ✓
+    43      14             8     Yes           True        ✓
+...
+   157      52            64     Yes           True        ✓
+   163      54          -169       –          False        ✓
+   181      60           -67       –          False        ✓
+   193      64           143       –          False        ✓
+   199      66            59       –          False        ✓
+
+The primes q <= 200 for which 2 is a cubic residue mod q are: 
+    31
+    43
+    109
+    127
+    157
+
+The proportion of primes q ≡ 1 (mod 3) <= 200 satisfying this condition is 0.238.
+The expected proportion of primes satisfying this condition is 1/e = 1/3 = 0.333.
 ```
 
 ### Verifying representation criteria
