@@ -22,8 +22,8 @@ the unique subfield of $\mathbb{Q}(\zeta_q)$ of degree $e$ over $\mathbb{Q}$.
 ### Main observation
 
 Numerical experiments suggest that $2$ is an $e$-th power mod $q$ if and only if
-the constant term of $\mu(x) is even. This library verifies this equivalence
-computationally and explores related criteria (such as needing $q=a^2+27b^2) that
+the constant term of $\mu(x)$ is even. This library verifies this equivalence
+computationally and explores related criteria (such as needing $q=a^2+27b^2$) that
 arise in specific cases.
 
 ## Installation
