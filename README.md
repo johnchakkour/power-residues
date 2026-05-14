@@ -1,7 +1,7 @@
 # power_residues
 
-A Python library for exploring **power residue criteria** via the theory of
-**Gaussian periods** and cyclotomic fields.
+A Python library for exploring power residue criteria via the theory of
+Gaussian periods and cyclotomic fields.
 
 For which primes $q$ is $2$ an $e$-th power residue mod $q$? The classical 
 answer is that this is controlled by the arithmetic of field extensions of
