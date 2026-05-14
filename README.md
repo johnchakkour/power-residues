@@ -3,7 +3,7 @@
 A Python library for exploring power residue criteria via the theory of
 Gaussian periods and cyclotomic fields.
 
-For which primes $q=ef+1$ is $2$ an $p$-th power residue mod $q$? The classical 
+For which primes $q=ef+1$ is $2$ an $e$-th power residue mod $q$? The classical 
 answer is that this is controlled by the arithmetic of field extensions of
 $\mathbb{Q}$. This library explicitly investigates the case of cyclotomic
 fields and makes the connection computational.
