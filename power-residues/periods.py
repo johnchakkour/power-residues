@@ -1,12 +1,3 @@
-"""
-References
-==========
-
-.. [1] F. Thaine (1996) "Properties that characterize Gaussian periods 
-        and cyclotomic numbers", Proc. Amer. Math. Soc. 124 (1): 35–45.
-
-"""
-
 from sympy import *
 from typing import *
 
@@ -94,6 +85,16 @@ def _prompt_choice(prompt: str, reprompt: str, choices: list) -> int:
     while v not in choices:
         v = int(input(reprompt.format(v=v)))
     return v
+
+
+def _first_row(q: int, e: int) -> list[int]:
+    """Coefficients (a_{0,0}, ..., a_{0,p-1}) of η0² = Σ_i a_{0,i}·η_i."""
+    g = primitive_root(q)
+    cosets = _subgroup(q, g, e)
+    z = symbols('ζ')
+    periods_list = [_periods(z, ck) for ck in cosets]
+    prd = _reduce_powers(expand(periods_list[0] ** 2), z, q)
+    return [int(c) for c in _linear(periods_list, prd, z)]
 
 
 def scan(e: int, bound: int, prnt=False) -> list[int]:
@@ -292,3 +293,52 @@ def gaussian_periods(q: int | None = None, e: int | None = None) -> None:
 
     except ValueError as exc:
         print(f"Error: {exc}")
+
+
+def check_row(e: int, bound: int, prnt: bool = True) -> list[list[int]]:
+    """For each prime q = ef + 1 ≤ bound, compute the row
+    (a_{0,0}, ..., a_{0,e-1}) such that η0² = Σ_i a_{0,i}·η_i, and bucket
+    q by which coefficients are odd.
+
+    Returns a list of e lists: result[i] is the primes q for which a_{0,i}
+    is odd.
+    """
+    if not isprime(e):
+        raise ValueError(f"{e} is not prime.")
+
+    odd_primes: list[list[int]] = [[] for _ in range(e)]
+
+    if prnt:
+        print(f"Scanning primes q = {e}·f + 1 up to {bound}.")
+        print(f"For each q we expand η0² = a_{{0,0}}·η0 + ... "
+              f"+ a_{{0,{e-1}}}·η{e-1} and record the parity of each "
+              f"coefficient.\n")
+        coeff_hdr = "  ".join(f"a_0,{i}".rjust(8) for i in range(e))
+        header = f"{'q':>8}  {coeff_hdr}  parity"
+        print(header)
+        print("-" * len(header))
+
+    q = 2
+    while q <= bound:
+        if (q - 1) % e == 0:
+            row = _first_row(q, e)
+            for i, a in enumerate(row):
+                if a % 2 != 0:
+                    odd_primes[i].append(q)
+            if prnt:
+                row_str = "  ".join(f"{a:>8}" for a in row)
+                parity = " " + "".join("1" if a % 2 else "0" for a in row)
+                print(f"{q:>8}  {row_str}  {parity}")
+        q = nextprime(q)
+
+    if prnt:
+        print()
+        for i in range(e):
+            print(f"Primes q ≡ 1 (mod {e}), q ≤ {bound}, with a_{{0,{i}}} odd:")
+            if odd_primes[i]:
+                print("    " + ", ".join(str(qq) for qq in odd_primes[i]))
+            else:
+                print("    (none)")
+            print()
+
+    return odd_primes
