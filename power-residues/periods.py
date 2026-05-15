@@ -293,7 +293,7 @@ def gaussian_periods(q: int | None = None, e: int | None = None) -> None:
 
     except ValueError as exc:
         print(f"Error: {exc}")
-
+ 
 
 def check_row(e: int, bound: int, prnt: bool = True) -> list[list[int]]:
     """For each prime q = ef + 1 ≤ bound, compute the row
